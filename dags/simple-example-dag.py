@@ -30,7 +30,7 @@ default_args = {
 with DAG('example_dag',
          start_date=datetime(2021, 4, 1),
          max_active_runs=1,
-         schedule_interval=timedelta(minutes=30),  # https://airflow.apache.org/docs/stable/scheduler.html#dag-runs
+         schedule_interval='@daily',  # schedule daily for exercise
          default_args=default_args,
          catchup=False # enable if you don't want historical dag runs to run
          ) as dag:
@@ -49,13 +49,19 @@ with DAG('example_dag',
         task_id='bash_print_date2',
         bash_command='sleep $[ ( $RANDOM % 30 )  + 1 ]s && date')
 
+    # Added bash operator task for exercise
+    t4 = BashOperator(
+        task_id='bash_print_date3',
+        bash_command='sleep $[ ( $RANDOM % 30 )  + 1 ]s && date')
+
     # generate tasks with a loop. task_id must be unique
-    for task in range(5):
+    for task in range(4):
         if version.startswith('2'):
             tn = PythonOperator(
                 task_id=f'python_print_date_{task}',
                 python_callable=my_custom_function,  # make sure you don't include the () of the function
                 op_kwargs={'task_number': task},
+                retries = 2 #change retries at the task level for exercise
             )
         else:
             tn = PythonOperator(
@@ -70,3 +76,4 @@ with DAG('example_dag',
 
     t0 >> t1
     t1 >> [t2, t3] # lists can be used to specify multiple tasks
+    t3 >> t4
